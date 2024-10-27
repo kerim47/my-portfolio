@@ -26,6 +26,24 @@
 
 <body data-spy="scroll" data-target=".site-navbar-target" data-offset="300">
 
+	<div class="lightbox" id="lightbox">
+		<div class="lightbox-content">
+			<button class="close-btn" id="closeLightbox">×</button>
+			<button class="nav-btn prev-btn" id="prevBtn">‹</button>
+			<button class="nav-btn next-btn" id="nextBtn">›</button>
+			<div class="spinner" id="spinner"></div>
+			<img src="" alt="Project Image" class="lightbox-img" id="lightboxImg">
+			<div class="lightbox-text" id="lightboxText">
+				<h3 id="lightboxTitle"></h3>
+				<span id="lightboxDesc"></span>
+			</div>
+			<div class="zoom-controls">
+				<button class="zoom-btn" id="zoomInBtn">+</button>
+				<button class="zoom-btn" id="zoomOutBtn">-</button>
+			</div>
+		</div>
+	</div>
+
 
 	<nav class="navbar navbar-expand-lg navbar-dark ftco_navbar ftco-navbar-light site-navbar-target" id="ftco-navbar">
 		<div class="container">

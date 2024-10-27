@@ -275,3 +275,225 @@
 
 })(jQuery);
 
+
+const projects = document.querySelectorAll('.project.img');
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightboxImg');
+const lightboxTitle = document.getElementById('lightboxTitle');
+const lightboxDesc = document.getElementById('lightboxDesc');
+const lightboxText = document.getElementById('lightboxText');
+const closeLightbox = document.getElementById('closeLightbox');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const spinner = document.getElementById('spinner');
+const zoomInBtn = document.getElementById('zoomInBtn');
+const zoomOutBtn = document.getElementById('zoomOutBtn');
+
+let currentIndex = 0;
+let currentScale = 1;
+let isDragging = false;
+let startPos = { x: 0, y: 0 };
+let currentPos = { x: 0, y: 0 };
+const projectsData = [];
+let touchStartX = null;
+
+// Proje verilerini topla
+projects.forEach((project, index) => {
+    const backgroundImage = project.style.backgroundImage.replace(/url\(['"](.+)['"]\)/, '$1');
+    const title = project.querySelector('h3 a').textContent;
+    const description = project.querySelector('span').textContent;
+    
+    projectsData.push({
+        image: backgroundImage,
+        title: title,
+        description: description
+    });
+
+    project.addEventListener('click', () => {
+        currentIndex = index;
+        openLightbox(currentIndex);
+    });
+});
+
+function openLightbox(index) {
+    currentScale = 1;
+    currentPos = { x: 0, y: 0 };
+    updateImageTransform();
+    
+    spinner.style.display = 'block';
+    lightboxImg.style.opacity = '0';
+    
+    const project = projectsData[index];
+    lightboxImg.src = project.image;
+    lightboxTitle.textContent = project.title;
+    lightboxDesc.textContent = project.description;
+    lightbox.classList.add('active');
+    
+    lightboxImg.onload = () => {
+        spinner.style.display = 'none';
+        lightboxImg.style.opacity = '1';
+    };
+    
+    updateNavButtons();
+}
+
+function updateNavButtons() {
+    prevBtn.style.display = currentIndex > 0 ? 'block' : 'none';
+    nextBtn.style.display = currentIndex < projectsData.length - 1 ? 'block' : 'none';
+}
+
+function updateImageTransform() {
+    lightboxImg.style.transform = `translate(${currentPos.x}px, ${currentPos.y}px) scale(${currentScale})`;
+}
+
+// Zoom functions
+zoomInBtn.addEventListener('click', () => {
+    if (currentScale < 3) {
+        currentScale += 0.5;
+        updateImageTransform();
+        lightboxText.classList.add('hidden');
+    }
+});
+
+zoomOutBtn.addEventListener('click', () => {
+    if (currentScale > 1) {
+        currentScale -= 0.5;
+        updateImageTransform();
+        if (currentScale === 1) {
+            lightboxText.classList.remove('hidden');
+            currentPos = { x: 0, y: 0 };
+            updateImageTransform();
+        }
+    }
+});
+
+// Dragging functionality
+lightboxImg.addEventListener('mousedown', startDragging);
+lightboxImg.addEventListener('touchstart', handleTouchStart, { passive: true });
+
+function startDragging(e) {
+    if (currentScale > 1) {
+        isDragging = true;
+        startPos = {
+            x: e.clientX - currentPos.x,
+            y: e.clientY - currentPos.y
+        };
+        lightboxImg.style.cursor = 'grabbing';
+    }
+}
+
+function handleTouchStart(e) {
+    if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        if (currentScale > 1) {
+            isDragging = true;
+            startPos = {
+                x: e.touches[0].clientX - currentPos.x,
+                y: e.touches[0].clientY - currentPos.y
+            };
+        }
+    }
+}
+
+document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        currentPos = {
+            x: e.clientX - startPos.x,
+            y: e.clientY - startPos.y
+        };
+        updateImageTransform();
+    }
+});
+
+document.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        
+        if (isDragging && currentScale > 1) {
+            currentPos = {
+                x: touch.clientX - startPos.x,
+                y: touch.clientY - startPos.y
+            };
+            updateImageTransform();
+            e.preventDefault();
+        } else {
+            // Swipe detection
+            const diffX = touchStartX - touch.clientX;
+            if (Math.abs(diffX) > 50) {
+                if (diffX > 0 && currentIndex < projectsData.length - 1) {
+                    currentIndex++;
+                    openLightbox(currentIndex);
+                } else if (diffX < 0 && currentIndex > 0) {
+                    currentIndex--;
+                    openLightbox(currentIndex);
+                }
+                touchStartX = null;
+            }
+        }
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+    lightboxImg.style.cursor = currentScale > 1 ? 'grab' : 'auto';
+});
+
+document.addEventListener('touchend', () => {
+    isDragging = false;
+    touchStartX = null;
+});
+
+// Navigation
+prevBtn.addEventListener('click', () => {
+    if (currentIndex > 0) {
+        currentIndex--;
+        openLightbox(currentIndex);
+    }
+});
+
+nextBtn.addEventListener('click', () => {
+    if (currentIndex < projectsData.length - 1) {
+        currentIndex++;
+        openLightbox(currentIndex);
+    }
+});
+
+// Closing functionality
+closeLightbox.addEventListener('click', () => {
+    lightbox.classList.remove('active');
+});
+
+lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) {
+        lightbox.classList.remove('active');
+    }
+});
+
+// Keyboard controls
+document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('active')) return;
+    
+    switch(e.key) {
+        case 'ArrowLeft':
+            if (currentIndex > 0) {
+                currentIndex--;
+                openLightbox(currentIndex);
+            }
+            break;
+        case 'ArrowRight':
+            if (currentIndex < projectsData.length - 1) {
+                currentIndex++;
+                openLightbox(currentIndex);
+            }
+            break;
+        case 'Escape':
+            lightbox.classList.remove('active');
+            break;
+        case '+':
+            zoomInBtn.click();
+            break;
+        case '-':
+            zoomOutBtn.click();
+            break;
+    }
+});
